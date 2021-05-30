@@ -7,5 +7,7 @@ module.exports = {
   transform: {
     '^.+\\.ts$': 'ts-jest'
   },
-  verbose: true
+  verbose: true,
+  setupFiles: ['jest-date-mock'],
+  setupFilesAfterEnv: ['./jest.setup.js']
 }
