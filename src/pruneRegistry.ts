@@ -24,6 +24,10 @@ export default async function proneRegistry(): Promise<void> {
 
   const apiToken = core.getInput('token')
 
+  if (!apiToken) {
+    console.warn('no token given')
+  }
+
   const registryResult = await fetch(
     `https://api.digitalocean.com/v2/registry`,
     {
