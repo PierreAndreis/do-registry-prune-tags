@@ -1,6 +1,6 @@
 {
   "name": "do-registry-prune-tags",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "private": true,
   "description": "Github Actions to prune old tags on a Container Registry hosted at Digital Ocean",
   "main": "lib/main.js",
