@@ -18,7 +18,6 @@ import {
 
 export default async function proneRegistry(): Promise<void> {
   const quiet = core.getInput('quiet')
-  console.log('1')
 
   const twoMonthsAgo = subDays(new Date(), 90)
   const yearAgo = subDays(new Date(), 365)
@@ -38,11 +37,7 @@ export default async function proneRegistry(): Promise<void> {
     }
   )
 
-  console.log('2')
-
   const registryBody: RegistryResponseData = await registryResult.json()
-
-  console.log('3', registryBody)
 
   const listOfRepositoriesResult = await fetch(
     `https://api.digitalocean.com/v2/registry/${registryBody.registry.name}/repositories`,
@@ -53,14 +48,10 @@ export default async function proneRegistry(): Promise<void> {
     }
   )
 
-  console.log('4')
-
   const listOfRepositoriesBody: ListRepositoryResponseData =
     await listOfRepositoriesResult.json()
 
   const listOfRepositories = listOfRepositoriesBody.repositories
-
-  console.log('5', listOfRepositories)
 
   for (let repository of listOfRepositories) {
     const listOfTagsResult = await fetch(
@@ -72,8 +63,6 @@ export default async function proneRegistry(): Promise<void> {
       }
     )
     const listOfTagsBody: ListOfTagsResponseData = await listOfTagsResult.json()
-
-    console.log('6', listOfTagsBody)
 
     // A list of tags that *might* be pruned because they are not one of the 4 most recent.
     const elegiblesTags = listOfTagsBody.tags
@@ -136,9 +125,9 @@ export default async function proneRegistry(): Promise<void> {
       )
     )
 
-    if (!quiet) {
+    if (quiet !== 'true') {
       //eslint-disable-next-line no-console
-      core.debug(`Prune Report for service "${repository.name}"`)
+      core.info(`Prune Report for service "${repository.name}"`)
       //eslint-disable-next-line no-console
       console.table(
         listOfTagsBody.tags.reduce(
@@ -154,8 +143,6 @@ export default async function proneRegistry(): Promise<void> {
       )
     }
 
-    console.log('7')
-
     for (const tag of prunableTags) {
       await fetch(
         `https://api.digitalocean.com/v2/registry/${repository.registry_name}/repositories/${repository.name}/tags/${tag}`,
@@ -167,18 +154,16 @@ export default async function proneRegistry(): Promise<void> {
         }
       )
       if (!quiet) {
-        core.debug(
+        core.info(
           `pruned tag ${tag} of repository ${repository.name} from registry ${repository.registry_name}`
         )
       }
     }
-
-    console.log('8', prunableTags.length)
   }
 
-  const disableGc = Boolean(core.getInput('disableGc'))
+  const disableGc = core.getInput('disableGc')
 
-  if (!disableGc) {
+  if (disableGc !== 'true') {
     // Start GC to free memory
     await fetch(
       `https://api.digitalocean.com/v2/registry/${registryBody.registry.name}/garbage-collection`,
@@ -189,8 +174,8 @@ export default async function proneRegistry(): Promise<void> {
         }
       }
     )
-    core.debug(`gc started on ${registryBody.registry.name}`)
+    core.info(`gc started on ${registryBody.registry.name}`)
+  } else {
+    core.info(`gc skipped`)
   }
-
-  console.log('9')
 }
