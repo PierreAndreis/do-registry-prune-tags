@@ -27,7 +27,7 @@
     "prune",
     "container"
   ],
-  "author": "",
+  "author": "PierreAndreis",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.3.0",

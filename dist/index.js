@@ -1,5 +1,177 @@
-/******/ (() => { // webpackBootstrap
+require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
+
+/***/ 3109:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const pruneRegistry_1 = __importDefault(__nccwpck_require__(8593));
+function run() {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield pruneRegistry_1.default();
+    });
+}
+exports.default = run;
+
+
+/***/ }),
+
+/***/ 8593:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const core = __importStar(__nccwpck_require__(2186));
+const date_fns_1 = __nccwpck_require__(3314);
+const node_fetch_1 = __importDefault(__nccwpck_require__(467));
+function proneRegistry() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const quiet = core.getInput('quiet');
+            const twoMonthsAgo = date_fns_1.subDays(new Date(), 90);
+            const yearAgo = date_fns_1.subDays(new Date(), 365);
+            const apiToken = core.getInput('token');
+            const registryResult = yield node_fetch_1.default(`https://api.digitalocean.com/v2/registry`, {
+                headers: {
+                    Authorization: `Bearer ${apiToken}`
+                }
+            });
+            const registryBody = yield registryResult.json();
+            const listOfRepositoriesResult = yield node_fetch_1.default(`https://api.digitalocean.com/v2/registry/${registryBody.registry.name}/repositories`, {
+                headers: {
+                    Authorization: `Bearer ${apiToken}`
+                }
+            });
+            const listOfRepositoriesBody = yield listOfRepositoriesResult.json();
+            const listOfRepositories = listOfRepositoriesBody.repositories;
+            for (let repository of listOfRepositories) {
+                const listOfTagsResult = yield node_fetch_1.default(`https://api.digitalocean.com/v2/registry/${repository.registry_name}/repositories/${repository.name}/tags?per_page=200`, {
+                    headers: {
+                        Authorization: `Bearer ${apiToken}`
+                    }
+                });
+                const listOfTagsBody = yield listOfTagsResult.json();
+                // A list of tags that *might* be pruned because they are not one of the 4 most recent.
+                const elegiblesTags = listOfTagsBody.tags
+                    .map(tag => (Object.assign(Object.assign({}, tag), { updated_at: new Date(tag.updated_at) })))
+                    .sort((a, b) => date_fns_1.compareDesc(a.updated_at, b.updated_at))
+                    .slice(4);
+                // Prune any tag that has a more recent version on the same day
+                const prunableSameDay = elegiblesTags.filter(({ updated_at }) => {
+                    const tagOnSameDay = elegiblesTags.filter(tag => date_fns_1.isSameDay(tag.updated_at, updated_at));
+                    return (tagOnSameDay.length > 1 &&
+                        !date_fns_1.isEqual(date_fns_1.max(tagOnSameDay.map(v => v.updated_at)), updated_at));
+                });
+                // Prune any tag that's not the most recent in a given week
+                const prunableByWeek = elegiblesTags.filter(({ updated_at }) => {
+                    const tagsOnSameWeeek = elegiblesTags.filter(tag => date_fns_1.isSameWeek(tag.updated_at, updated_at));
+                    return !date_fns_1.isEqual(updated_at, date_fns_1.max(tagsOnSameWeeek.map(tags => tags.updated_at)));
+                });
+                // If a tag is at least two months old, prune any tag that's not the most recent tag in that month
+                const prunableByMonth = elegiblesTags.filter(({ updated_at }) => {
+                    const tagsOnSameMonth = elegiblesTags.filter(version => date_fns_1.isSameMonth(version.updated_at, updated_at));
+                    return (date_fns_1.isBefore(updated_at, twoMonthsAgo) &&
+                        !date_fns_1.isEqual(updated_at, date_fns_1.max(tagsOnSameMonth.map(tags => tags.updated_at))));
+                });
+                // Prune anything older than a year. That's old, man!
+                const prunableByYear = elegiblesTags.filter(({ updated_at }) => date_fns_1.isBefore(updated_at, yearAgo));
+                const prunableTags = Array.from(new Set([
+                    prunableSameDay,
+                    prunableByWeek,
+                    prunableByMonth,
+                    prunableByYear
+                ].reduce((collector, prunables) => collector.concat(prunables.map(({ tag }) => tag)), [])));
+                if (!quiet) {
+                    //eslint-disable-next-line no-console
+                    core.debug(`Prune Report for service "${repository.name}"`);
+                    //eslint-disable-next-line no-console
+                    console.table(listOfTagsBody.tags.reduce((collector, { tag, updated_at }) => Object.assign(collector, {
+                        [tag]: {
+                            date: updated_at,
+                            pruned: prunableTags.includes(tag) ? 'YES' : 'no'
+                        }
+                    }), {}));
+                }
+                for (const tag of prunableTags) {
+                    yield node_fetch_1.default(`https://api.digitalocean.com/v2/registry/${repository.registry_name}/repositories/${repository.name}/tags/${tag}`, {
+                        method: 'DELETE',
+                        headers: {
+                            Authorization: `Bearer ${apiToken}`
+                        }
+                    });
+                    if (!quiet) {
+                        core.debug(`pruned tag ${tag} of repository ${repository.name} from registry ${repository.registry_name}`);
+                    }
+                }
+            }
+            const disableGc = Boolean(core.getInput('disableGc'));
+            if (!disableGc) {
+                // Start GC to free memory
+                yield node_fetch_1.default(`https://api.digitalocean.com/v2/registry/${registryBody.registry.name}/garbage-collection`, {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${apiToken}`
+                    }
+                });
+                core.debug(`gc started on ${registryBody.registry.name}`);
+            }
+        }
+        catch (error) {
+            console.warn(error);
+            core.setFailed(error.message);
+        }
+    });
+}
+exports.default = proneRegistry;
+
+
+/***/ }),
 
 /***/ 7351:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
@@ -561,7 +733,7 @@ var _index3 = _interopRequireDefault(__nccwpck_require__(8493));
 
 var _index4 = _interopRequireDefault(__nccwpck_require__(7170));
 
-var _index5 = _interopRequireDefault(__nccwpck_require__(5993));
+var _index5 = _interopRequireDefault(__nccwpck_require__(8761));
 
 var _index6 = _interopRequireDefault(__nccwpck_require__(8050));
 
@@ -1799,7 +1971,7 @@ module.exports = exports.default;
 
 /***/ }),
 
-/***/ 5993:
+/***/ 8761:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -2095,7 +2267,7 @@ var _index = _interopRequireDefault(__nccwpck_require__(1985));
 
 var _index2 = _interopRequireDefault(__nccwpck_require__(6477));
 
-var _index3 = _interopRequireDefault(__nccwpck_require__(5993));
+var _index3 = _interopRequireDefault(__nccwpck_require__(8761));
 
 var _index4 = _interopRequireDefault(__nccwpck_require__(2063));
 
@@ -22510,7 +22682,7 @@ var Stream = _interopDefault(__nccwpck_require__(2413));
 var http = _interopDefault(__nccwpck_require__(8605));
 var Url = _interopDefault(__nccwpck_require__(8835));
 var https = _interopDefault(__nccwpck_require__(7211));
-var zlib = _interopDefault(__nccwpck_require__(8761));
+var zlib = _interopDefault(__nccwpck_require__(1903));
 
 // Based on https://github.com/tmpvar/jsdom/blob/aa85b2abf07766ff7bf5c1f6daafb3726f2f2db5/lib/jsdom/living/blob.js
 
@@ -24217,7 +24389,7 @@ module.exports = require("url");;
 
 /***/ }),
 
-/***/ 8761:
+/***/ 1903:
 /***/ ((module) => {
 
 "use strict";
@@ -24258,188 +24430,16 @@ module.exports = require("zlib");;
 /******/ 	}
 /******/ 	
 /************************************************************************/
-/******/ 	/* webpack/runtime/compat get default export */
-/******/ 	(() => {
-/******/ 		// getDefaultExport function for compatibility with non-harmony modules
-/******/ 		__nccwpck_require__.n = (module) => {
-/******/ 			var getter = module && module.__esModule ?
-/******/ 				() => (module['default']) :
-/******/ 				() => (module);
-/******/ 			__nccwpck_require__.d(getter, { a: getter });
-/******/ 			return getter;
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/define property getters */
-/******/ 	(() => {
-/******/ 		// define getter functions for harmony exports
-/******/ 		__nccwpck_require__.d = (exports, definition) => {
-/******/ 			for(var key in definition) {
-/******/ 				if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
-/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
-/******/ 				}
-/******/ 			}
-/******/ 		};
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
-/******/ 	(() => {
-/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
-/******/ 	})();
-/******/ 	
-/******/ 	/* webpack/runtime/make namespace object */
-/******/ 	(() => {
-/******/ 		// define __esModule on exports
-/******/ 		__nccwpck_require__.r = (exports) => {
-/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
-/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
-/******/ 			}
-/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
-/******/ 		};
-/******/ 	})();
-/******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";/************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be in strict mode.
-(() => {
-"use strict";
-// ESM COMPAT FLAG
-__nccwpck_require__.r(__webpack_exports__);
-
-// EXPORTS
-__nccwpck_require__.d(__webpack_exports__, {
-  "default": () => (/* binding */ main)
-});
-
-// EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
-var core = __nccwpck_require__(2186);
-// EXTERNAL MODULE: ./node_modules/date-fns/index.js
-var date_fns = __nccwpck_require__(3314);
-// EXTERNAL MODULE: ./node_modules/node-fetch/lib/index.js
-var lib = __nccwpck_require__(467);
-var lib_default = /*#__PURE__*/__nccwpck_require__.n(lib);
-;// CONCATENATED MODULE: ./src/pruneRegistry.ts
-var __awaiter = (undefined && undefined.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-
-
-
-function proneRegistry() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            const quiet = core.getInput('quiet');
-            const twoMonthsAgo = (0,date_fns.subDays)(new Date(), 90);
-            const yearAgo = (0,date_fns.subDays)(new Date(), 365);
-            const apiToken = core.getInput('token');
-            const registryResult = yield lib_default()(`https://api.digitalocean.com/v2/registry`, {
-                headers: {
-                    Authorization: `Bearer ${apiToken}`
-                }
-            });
-            const registryBody = yield registryResult.json();
-            const listOfRepositoriesResult = yield lib_default()(`https://api.digitalocean.com/v2/registry/${registryBody.registry.name}/repositories`, {
-                headers: {
-                    Authorization: `Bearer ${apiToken}`
-                }
-            });
-            const listOfRepositoriesBody = yield listOfRepositoriesResult.json();
-            const listOfRepositories = listOfRepositoriesBody.repositories;
-            for (let repository of listOfRepositories) {
-                const listOfTagsResult = yield lib_default()(`https://api.digitalocean.com/v2/registry/${repository.registry_name}/repositories/${repository.name}/tags?per_page=200`, {
-                    headers: {
-                        Authorization: `Bearer ${apiToken}`
-                    }
-                });
-                const listOfTagsBody = yield listOfTagsResult.json();
-                // A list of tags that *might* be pruned because they are not one of the 4 most recent.
-                const elegiblesTags = listOfTagsBody.tags
-                    .map(tag => (Object.assign(Object.assign({}, tag), { updated_at: new Date(tag.updated_at) })))
-                    .sort((a, b) => (0,date_fns.compareDesc)(a.updated_at, b.updated_at))
-                    .slice(4);
-                // Prune any tag that has a more recent version on the same day
-                const prunableSameDay = elegiblesTags.filter(({ updated_at }) => {
-                    const tagOnSameDay = elegiblesTags.filter(tag => (0,date_fns.isSameDay)(tag.updated_at, updated_at));
-                    return (tagOnSameDay.length > 1 &&
-                        !(0,date_fns.isEqual)((0,date_fns.max)(tagOnSameDay.map(v => v.updated_at)), updated_at));
-                });
-                // Prune any tag that's not the most recent in a given week
-                const prunableByWeek = elegiblesTags.filter(({ updated_at }) => {
-                    const tagsOnSameWeeek = elegiblesTags.filter(tag => (0,date_fns.isSameWeek)(tag.updated_at, updated_at));
-                    return !(0,date_fns.isEqual)(updated_at, (0,date_fns.max)(tagsOnSameWeeek.map(tags => tags.updated_at)));
-                });
-                // If a tag is at least two months old, prune any tag that's not the most recent tag in that month
-                const prunableByMonth = elegiblesTags.filter(({ updated_at }) => {
-                    const tagsOnSameMonth = elegiblesTags.filter(version => (0,date_fns.isSameMonth)(version.updated_at, updated_at));
-                    return ((0,date_fns.isBefore)(updated_at, twoMonthsAgo) &&
-                        !(0,date_fns.isEqual)(updated_at, (0,date_fns.max)(tagsOnSameMonth.map(tags => tags.updated_at))));
-                });
-                // Prune anything older than a year. That's old, man!
-                const prunableByYear = elegiblesTags.filter(({ updated_at }) => (0,date_fns.isBefore)(updated_at, yearAgo));
-                const prunableTags = Array.from(new Set([
-                    prunableSameDay,
-                    prunableByWeek,
-                    prunableByMonth,
-                    prunableByYear
-                ].reduce((collector, prunables) => collector.concat(prunables.map(({ tag }) => tag)), [])));
-                if (!quiet) {
-                    //eslint-disable-next-line no-console
-                    core.debug(`Prune Report for service "${repository.name}"`);
-                    //eslint-disable-next-line no-console
-                    console.table(listOfTagsBody.tags.reduce((collector, { tag, updated_at }) => Object.assign(collector, {
-                        [tag]: {
-                            date: updated_at,
-                            pruned: prunableTags.includes(tag) ? 'YES' : 'no'
-                        }
-                    }), {}));
-                }
-                for (const tag of prunableTags) {
-                    yield lib_default()(`https://api.digitalocean.com/v2/registry/${repository.registry_name}/repositories/${repository.name}/tags/${tag}`, {
-                        method: 'DELETE',
-                        headers: {
-                            Authorization: `Bearer ${apiToken}`
-                        }
-                    });
-                    if (!quiet) {
-                        core.debug(`pruned tag ${tag} of repository ${repository.name} from registry ${repository.registry_name}`);
-                    }
-                }
-            }
-            const disableGc = Boolean(core.getInput('disableGc'));
-            if (!disableGc) {
-                // Start GC to free memory
-                yield lib_default()(`https://api.digitalocean.com/v2/registry/${registryBody.registry.name}/garbage-collection`, {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${apiToken}`
-                    }
-                });
-                core.debug(`gc started on ${registryBody.registry.name}`);
-            }
-        }
-        catch (error) {
-            console.log('aaa');
-            console.warn(error);
-            core.setFailed(error.message);
-        }
-    });
-}
-
-;// CONCATENATED MODULE: ./src/main.ts
-
-proneRegistry();
-/* harmony default export */ const main = (proneRegistry);
-
-})();
-
-module.exports = __webpack_exports__;
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(3109);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;
+//# sourceMappingURL=index.js.map

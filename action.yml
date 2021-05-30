@@ -1,6 +1,9 @@
-name: 'DigitalOcean Registry Prune'
-description: 'Prunes old tags from a container registry on digital ocean'
+name: 'DigitalOcean Registry Prune Old Tags'
+description: 'Prunes old tags from a container registry on digitalocean'
 author: 'PierreAndreis'
+branding:
+  icon: archive
+  color: blue
 inputs:
   token: # change this
     required: true

@@ -45,7 +45,8 @@ export default async function proneRegistry(): Promise<void> {
       }
     )
 
-    const listOfRepositoriesBody: ListRepositoryResponseData = await listOfRepositoriesResult.json()
+    const listOfRepositoriesBody: ListRepositoryResponseData =
+      await listOfRepositoriesResult.json()
 
     const listOfRepositories = listOfRepositoriesBody.repositories
 
@@ -58,7 +59,8 @@ export default async function proneRegistry(): Promise<void> {
           }
         }
       )
-      const listOfTagsBody: ListOfTagsResponseData = await listOfTagsResult.json()
+      const listOfTagsBody: ListOfTagsResponseData =
+        await listOfTagsResult.json()
 
       // A list of tags that *might* be pruned because they are not one of the 4 most recent.
       const elegiblesTags = listOfTagsBody.tags
@@ -176,7 +178,6 @@ export default async function proneRegistry(): Promise<void> {
       core.debug(`gc started on ${registryBody.registry.name}`)
     }
   } catch (error) {
-    console.log('aaa')
     console.warn(error)
     core.setFailed(error.message)
   }
