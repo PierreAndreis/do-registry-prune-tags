@@ -45,8 +45,7 @@ export default async function proneRegistry(): Promise<void> {
       }
     )
 
-    const listOfRepositoriesBody: ListRepositoryResponseData =
-      await listOfRepositoriesResult.json()
+    const listOfRepositoriesBody: ListRepositoryResponseData = await listOfRepositoriesResult.json()
 
     const listOfRepositories = listOfRepositoriesBody.repositories
 
@@ -59,8 +58,7 @@ export default async function proneRegistry(): Promise<void> {
           }
         }
       )
-      const listOfTagsBody: ListOfTagsResponseData =
-        await listOfTagsResult.json()
+      const listOfTagsBody: ListOfTagsResponseData = await listOfTagsResult.json()
 
       // A list of tags that *might* be pruned because they are not one of the 4 most recent.
       const elegiblesTags = listOfTagsBody.tags
@@ -91,7 +89,7 @@ export default async function proneRegistry(): Promise<void> {
         )
       })
 
-      // If a version is at least two months old, prune any version that's not the most recent version in that month
+      // If a tag is at least two months old, prune any tag that's not the most recent tag in that month
       const prunableByMonth = elegiblesTags.filter(({updated_at}) => {
         const tagsOnSameMonth = elegiblesTags.filter(version =>
           isSameMonth(version.updated_at, updated_at)

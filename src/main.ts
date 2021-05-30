@@ -1,2 +1,4 @@
-import pruneRegistry from './pruneRegistry'
-pruneRegistry()
+import run from './pruneRegistry'
+run()
+
+export default run
