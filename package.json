@@ -3,15 +3,14 @@
   "version": "0.0.1",
   "private": true,
   "description": "Github Actions to prune old tags on a Container Registry hosted at Digital Ocean",
-  "main": "lib/main.js",
+  "main": "src/main.ts",
   "scripts": {
-    "build": "tsc",
     "format": "prettier --write **/*.ts",
     "format-check": "prettier --check **/*.ts",
     "lint": "eslint src/**/*.ts",
-    "package": "ncc build --source-map --license licenses.txt",
+    "package": "ncc build src/main.ts --source-map --license licenses.txt -m",
     "test": "jest",
-    "all": "yarn build && yarn format && yarn lint && yarn package && yarn test",
+    "all": "yarn format && yarn lint && yarn test && yarn package",
     "dev": "nodemon src/main.ts"
   },
   "repository": {
