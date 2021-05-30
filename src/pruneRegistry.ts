@@ -42,7 +42,7 @@ export default async function proneRegistry(): Promise<void> {
 
   const registryBody: RegistryResponseData = await registryResult.json()
 
-  console.log('3')
+  console.log('3', registryBody)
 
   const listOfRepositoriesResult = await fetch(
     `https://api.digitalocean.com/v2/registry/${registryBody.registry.name}/repositories`,
@@ -60,7 +60,7 @@ export default async function proneRegistry(): Promise<void> {
 
   const listOfRepositories = listOfRepositoriesBody.repositories
 
-  console.log('5')
+  console.log('5', listOfRepositories)
 
   for (let repository of listOfRepositories) {
     const listOfTagsResult = await fetch(
@@ -73,7 +73,7 @@ export default async function proneRegistry(): Promise<void> {
     )
     const listOfTagsBody: ListOfTagsResponseData = await listOfTagsResult.json()
 
-    console.log('6')
+    console.log('6', listOfTagsBody)
 
     // A list of tags that *might* be pruned because they are not one of the 4 most recent.
     const elegiblesTags = listOfTagsBody.tags
