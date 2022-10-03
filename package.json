@@ -29,7 +29,7 @@
   "author": "PierreAndreis",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.4.0",
+    "@actions/core": "^1.10.0",
     "date-fns": "^2.22.1",
     "node-fetch": "^2.6.1"
   },
