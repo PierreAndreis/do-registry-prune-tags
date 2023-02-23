@@ -36,7 +36,7 @@
   "devDependencies": {
     "@types/date-fns": "^2.6.0",
     "@types/jest": "^26.0.23",
-    "@types/node": "^15.12.5",
+    "@types/node": "^18.14.1",
     "@types/node-fetch": "^2.5.10",
     "@typescript-eslint/parser": "^4.28.1",
     "@vercel/ncc": "^0.28.6",
